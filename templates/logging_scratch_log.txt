@@ -1,0 +1,105 @@
+
+push.py logger: 2023-12-02 10:55:28,555:INFO:main:9:Info:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:55:28,556:DEBUG:main:10:Debug:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:55:59,421:INFO:main:9:Info green:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:55:59,421:DEBUG:main:10:Debug grey:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:55:59,422:WARNING:main:11:Warning:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:56:40,362:INFO:main:9:Info green:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:56:40,363:DEBUG:main:10:Debug grey:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:56:40,363:WARNING:main:11:Warning orange:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:56:40,363:ERROR:main:12:Error red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 10:56:40,363:CRITICAL:main:13:Critical:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:14:15,223:INFO:main:9:Info green:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:14:15,225:DEBUG:main:10:Debug grey:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:14:15,226:WARNING:main:11:Warning orange:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:14:15,226:ERROR:main:12:Error red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:14:15,226:CRITICAL:main:13:Critical red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:15:39,102:INFO:main:9:Info green:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:15:39,102:DEBUG:main:10:Debug grey:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:15:39,103:WARNING:main:11:Warning orange:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:15:39,103:ERROR:main:12:Error red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:15:39,103:CRITICAL:main:13:Critical red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:16:05,160:INFO:main:9:Info green:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:16:05,161:DEBUG:main:10:Debug grey:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:16:05,161:WARNING:main:11:Warning orange:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:16:05,161:ERROR:main:12:Error red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:16:05,161:CRITICAL:main:13:Critical red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+push.py logger: 2023-12-02 11:42:55,456:INFO:main:9:Info green:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+push.py logger: 2023-12-02 11:42:55,456:DEBUG:main:10:Debug cyan:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+push.py logger: 2023-12-02 11:42:55,457:WARNING:main:11:Warning yellow:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+push.py logger: 2023-12-02 11:42:55,457:ERROR:main:12:Error red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+push.py logger: 2023-12-02 11:42:55,457:CRITICAL:main:13:Critical red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+push.py logger: 2023-12-02 11:43:55,817:INFO:main:9:Info green:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+
+push.py logger: 2023-12-02 11:43:55,818:DEBUG:main:10:Debug cyan:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+
+push.py logger: 2023-12-02 11:43:55,818:WARNING:main:11:Warning yellow:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+
+push.py logger: 2023-12-02 11:43:55,819:ERROR:main:12:Error red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+
+
+push.py logger: 2023-12-02 11:43:55,819:CRITICAL:main:13:Critical red:C:\Ubuntu\Shared\FFB\templates\logging_scratch.py
+
+

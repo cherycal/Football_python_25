@@ -1,0 +1,38 @@
+
+push.py logger: 2023-12-12 10:31:56,200:INFO:main:11:Test log msg
+logger script path=C:\Ubuntu\Shared\FFB\templates\scratch.py
+
+
+
+push.py logger: time=2023-12-12 10:34:38,685 level=INFO:calling_function=main lineno=11 msg=Test log msg
+logger script path=C:\Ubuntu\Shared\FFB\templates\scratch.py
+
+
+
+push.py logger: time=2023-12-12 10:35:44,209 level=INFO calling_function=main lineno=11 msg=Test log msg
+logger script path=C:\Ubuntu\Shared\FFB\templates\scratch.py
+
+
+
+push.py logger: time=2023-12-12 10:36:47,485 level=INFO calling_function=main lineno=11 msg=Test log msg
+logger script path=C:\Ubuntu\Shared\FFB\templates\scratch.py
+
+
+
+push.py logger: time=2023-12-12 10:37:19,416 level=INFO calling_function=main lineno=11
+msg=Test log msg
+logger script path=C:\Ubuntu\Shared\FFB\templates\scratch.py
+
+
+
+push.py logger: time=2023-12-12 10:38:07,813 level=INFO calling_function=main lineno=11
+msg=Test log msg
+calling process path=C:\Ubuntu\Shared\FFB\templates\scratch.py
+
+
+
+push.py logger: time=2023-12-12 10:38:43,791 level=INFO calling_function=main lineno=11
+msg=Test log msg
+calling process path=C:\Ubuntu\Shared\FFB\templates\scratch.py
+
+
