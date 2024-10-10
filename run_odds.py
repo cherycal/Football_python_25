@@ -1,6 +1,6 @@
 __author__ = 'chance'
 
-from odds import Odds
+from modules.odds import Odds
 
 
 def main():
