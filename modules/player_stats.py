@@ -116,7 +116,7 @@ class Stats:
         self.request_instance.set_limit(LIMIT)
         url = f"{self.API_BASE}/{year}/segments/0/leaguedefaults/3?view=kona_player_info"
         player_data = self.request_instance.make_request(url=url,
-                                                         output_file=f"./data/ESPNPlayerStats.json",
+                                                         output_file=f"../data/ESPNPlayerStats.json",
                                                          write=True, calling_function="get_player_stats")
         try:
             players = player_data['players']
@@ -356,7 +356,7 @@ class Stats:
 
     def write_rosters(self, data):
         update_time = datetime.datetime.now().strftime("%Y%m%d.%H%M%S")
-        file_name = './data/roster_data_file.csv'
+        file_name = '../data/roster_data_file.csv'
         table_name = "Rosters"
         # original_rosters = roster_dict(data['db'])
         with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
@@ -419,7 +419,7 @@ class Stats:
             print(f"new_rosters len:{len(new_rosters)} or original_rosters len:{len(original_rosters)} is empty")
 
     def write_player_info(self, data):
-        file_name = './data/player_data_file.csv'
+        file_name = '../data/player_data_file.csv'
         table_name = "PlayerInfo"
 
         is_header = True
@@ -447,7 +447,7 @@ class Stats:
         if data is None:
             data = dict()
             data['player_stats'] = self.get_player_stats()
-        file_name = "./data/player_stats_file.csv"
+        file_name = "../data/player_stats_file.csv"
         table_name = "PlayerStats"
         leagueId = 0
         # is_header = True
@@ -477,7 +477,7 @@ class Stats:
         return 0
 
     def write_team_schedules(self, data):
-        file_name = './data/team_file.csv'
+        file_name = '../data/team_file.csv'
         table_name = "TeamSchedules"
         with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
             # creating a csv writer object
@@ -563,7 +563,7 @@ class Stats:
 
         print_it = True
         if print_it:
-            file_name = './data/ranking_file.csv'
+            file_name = '../data/ranking_file.csv'
             table_name = "TeamRankings"
             with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
                 csv_writer = csv.writer(csv_file)
@@ -587,7 +587,7 @@ class Stats:
                 print(f"Exception in refresh {table_name}: {ex}")
                 self.DB.reset()
 
-            file_name = './data/weekly_file.csv'
+            file_name = '../data/weekly_file.csv'
             table_name = "TeamWeeklyStats"
             with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
                 csv_writer = csv.writer(csv_file)
@@ -615,7 +615,7 @@ class Stats:
         return 0
 
     def write_league_availability(self, availability, league_name):
-        file_name = './data/availability_file.csv'
+        file_name = '../data/availability_file.csv'
         table_name = "LeagueAvailability"
         with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
             # creating a csv writer object
