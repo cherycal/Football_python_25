@@ -43,7 +43,7 @@ class Scoreboard:
         self.slack_alerts_channel = os.environ["SLACK_ALERTS_CHANNEL"]
         self.summary_msg = ""
         self.page_msg = ""
-        self.repo_dir = "C:\\Ubuntu\\Shared\\FFB"
+        self.repo_dir = os.getcwd()
         self.git_repo = Repo(self.repo_dir)
 
     @property
@@ -164,7 +164,7 @@ class Scoreboard:
         url = (f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/"
                f"{self.SEASON}/segments/0/leagues/{league_id}?view=mScoreboard")
         self.logger.info(f"get_scoreboard: {url}")
-        scoreboard = self.request_instance.make_request(url=url)
+        scoreboard = self.request_instance.make_request(url=url, calling_function="get_scoreboard")
         return scoreboard
 
     def get_team_abbrs(self):
@@ -205,11 +205,11 @@ class Scoreboard:
                 away_team_name = self.fantasy_teams[league][str(away_team)]
                 my_loc = ""
                 my_team = ""
-                if home_team_name in ['MO', 'ZONE', 'RULE']:
+                if home_team_name in ['AXIS', 'FRAN', 'RULE']:
                     my_team = home_team_name
                     home_team_name += "**"
                     my_loc = "home"
-                if away_team_name in ['MO', 'ZONE', 'RULE']:
+                if away_team_name in ['AXIS', 'FRAN', 'RULE']:
                     my_team = away_team_name
                     away_team_name += "**"
                     my_loc = "away"
@@ -339,7 +339,7 @@ class Scoreboard:
 
 
 def main():
-    scoreboard = Scoreboard()
+    scoreboard = Scoreboard(main_loop_sleep=480)
     scoreboard.start()
 
 
