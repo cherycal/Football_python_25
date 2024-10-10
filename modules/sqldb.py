@@ -52,7 +52,7 @@ class DB:
         self.cursor = self.conn.cursor()
         self.msg = ""
         self.push_instance = push.Push(calling_function="SQLDB")
-        self.repo_dir = "C:\\Ubuntu\\Shared\\FFB"
+        self.repo_dir = os.getcwd()
         self.git_repo = Repo(self.repo_dir)
 
     def __repr__(self):
@@ -324,7 +324,7 @@ class DB:
 
     def table_to_html(self, tblname, publish=True):
         lol = []
-        filename = f'./site/{tblname}.html'
+        filename = f'C:\\Ubuntu\\Shared\\Fantasy\\Football\\Football_python\\site\\{tblname}.html'
         if self.table_or_view(tblname):
             detail_history = self.select_plus(f'SELECT * FROM {tblname}')
             for row in detail_history['rows']:

@@ -2,7 +2,7 @@ __author__ = 'chance'
 
 import sys
 sys.path.append('./modules')
-from player_stats import Stats
+from modules.player_stats import Stats
 def main():
     stats = Stats(season=2019)
     print(stats)
