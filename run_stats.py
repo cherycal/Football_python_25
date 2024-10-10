@@ -4,7 +4,7 @@ import sys
 sys.path.append('./modules')
 sys.path.append('..')
 
-from player_stats import Stats
+from modules.player_stats import Stats
 
 
 def main():
