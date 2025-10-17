@@ -2,30 +2,35 @@ __author__ = 'chance'
 
 import csv
 import datetime
+import random
 import sys
 
 sys.path.append('./modules')
 sys.path.append('..')
 
-from modules import sqldb, requestor
+from modules import sqldb, requestor, tools
 import pandas as pd
 
 
 class Odds:
     # New year procedure: just update DEFAULT_LEAGUE_ID to any valid league id
-    def __init__(self, season=int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))):
+    def __init__(self, request_sleep_int=random.randint(2, 7),
+                 season=int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))):
         self._SEASON = season
         self.DB = sqldb.DB('Football.db')
         self.request_instance = requestor.Request()
         self.update_time = datetime.datetime.now().strftime("%Y%m%d.%H%M%S")
+        self.request_sleep_int = request_sleep_int
 
     def game_odds(self, game):
         file_name = './data/odds.csv'
         table_name = "Odds"
         url = str(f"https://sports.core.api.espn.com/v2/sports/football/"
                   f"leagues/nfl/events/{game}/competitions/{game}/odds")
+        sleep_int = self.request_sleep_int
         odds_data = self.request_instance.make_request(url=url, output_file=f"./data/ESPNOdds.json",
-                                                       write=True, calling_function="game_odds")
+                                                       sleep_int=sleep_int, write=True,
+                                                       calling_function="game_odds")
         with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
             # creating a csv writer object
             csv_writer = csv.writer(csv_file)
@@ -43,10 +48,15 @@ class Odds:
                         favorite = "Home"
                 if favorite != "?":
                     line = str(odds_quote.get('details'))
-                    fav, spd = line.split(" ")
-                    if len(fav) == 2:
-                        fav = f"{fav[0]} {fav[1]}"
-                    line = f"{fav} {spd}"
+                    if line == "EVEN":
+                        print(line)
+                        fav = "None"
+                        spd = 0
+                    else:
+                        fav, spd = line.split(" ")
+                        if len(fav) == 2:
+                            fav = f"{fav[0]} {fav[1]}"
+                        line = f"{fav} {spd}"
                     # print(line)
                     # self.update_time = datetime.datetime.now().strftime("%Y%m%d.%H%M%S")
                     print(f"{game},{line},{odds_quote.get('spread')},{odds_quote.get('overUnder')},"
@@ -58,16 +68,20 @@ class Odds:
         try:
             self.DB.df_to_sql(df, table_name, register=False)
         except Exception as ex:
-            print(f"Exception in df.to_sql: {ex}")
+            print(f"Exception in df.to_sql in odds:game_odds for table {table_name}: {ex}")
             self.DB.reset()
 
     def run_odds(self):
-        games_query = self.DB.query(f"select distinct game_id from LeagueSchedule "
-                                    f"where game_week = (select max(week) from PlayerStats where "
-                                    f"Year = ( select max(year) from CurrentSeason)) and year = "
-                                    f"( select max(year) from CurrentSeason)")
-
+        games_query = self.DB.query(f"""select distinct game_id from LeagueSchedule 
+                                    where game_week = (select current_week from CurrentWeek) and year = 
+                                    ( select max(year) from CurrentSeason)""")
+        pass
         [self.game_odds(row['game_id']) for row in games_query]
+
+
+@tools.connection_check
+def run():
+    Odds().run_odds()
 
 
 def main():

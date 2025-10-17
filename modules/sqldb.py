@@ -9,7 +9,7 @@ import pandas as pd
 from modules import push, tools
 import datetime
 import dataframe_image as dfi
-from git import Repo
+# from git import Repo
 
 
 def print_calling_function(command='command left blank'):
@@ -53,7 +53,7 @@ class DB:
         self.msg = ""
         self.push_instance = push.Push(calling_function="SQLDB")
         self.repo_dir = os.getcwd()
-        self.git_repo = Repo(self.repo_dir)
+        # self.git_repo = Repo(self.repo_dir) or None
 
     def __repr__(self):
         return f"{self.db}"

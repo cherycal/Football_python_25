@@ -16,8 +16,11 @@ import requests
 class Request(object):
 
     def __init__(self, sleep_interval=None):
+        DEFAULT_SLEEP_INTERVAL = 5
         if sleep_interval is not None:
             print(f"Request:__init__: sleep interval set to {sleep_interval}")
+        else:
+            sleep_interval = DEFAULT_SLEEP_INTERVAL
         self.sleep_interval = sleep_interval
         # ESPN_BASE = 'https://fantasy.espn.com/apis/v3/games/flb/seasons/'
         ESPN_BASE = 'https://lm-api-reads.fantasy.espn.com/apis/v3/games/flb/seasons/'
@@ -98,7 +101,7 @@ class Request(object):
             json_object = json.loads(url.read().decode())
             return json_object
 
-    def make_request(self, write=False, print_flag=True, url=None, input_file=None, headers=None,
+    def make_request(self, write: bool = False, print_flag=True, url=None, input_file=None, headers=None,
                      output_file=None, filters=None, calling_function=None, sleep_int=None):
 
         url = url or self.DEFAULT_URL()
@@ -137,7 +140,7 @@ class Request(object):
             if write:
                 with open(output_file, 'w') as outfile:
                     json.dump(resp, outfile)
-                    self.push_instance.logger_instance.info("Printed result to " + output_file)
+                    # self.push_instance.logger_instance.info("Printed result to " + output_file)
 
             # if print_flag:
             #     print(f"Resp: {resp}")
@@ -151,8 +154,12 @@ class Request(object):
             except Exception as push_exception:
                 print(f"Error in make_request:Exception:push (url={url}): {push_exception}")
 
-        if sleep_int is None and self.sleep_interval is None:
-            sleep_int = random.randint(4, 15)
+        if sleep_int is None:
+            print(f"Using sleep base of self.sleep_interval of {self.sleep_interval}")
+            sleep_int = random.randint(int(self.sleep_interval * .75), int(self.sleep_interval * 1.25))
+        else:
+            sleep_int = random.randint(int(sleep_int * .75), int(sleep_int * 1.25))
+
         print(f"requestor:make_request sleep for {sleep_int} at {datetime.now().strftime('%H%M%S')}")
         time.sleep(sleep_int)
 

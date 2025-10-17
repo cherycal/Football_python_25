@@ -1,10 +1,11 @@
 __author__ = 'chance'
 
-from modules.odds import Odds
+from modules import odds, player_stats
 
 
 def main():
-    Odds().run_odds()
+    odds.run()
+    player_stats.run_snaps()
 
 
 if __name__ == "__main__":

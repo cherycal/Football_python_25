@@ -1,21 +1,18 @@
 __author__ = 'chance'
 
 import datetime
-# import inspect
-# import json
-# import sys
 import threading
 
 import time
-from modules import requestor, sqldb, push
+from modules import requestor, sqldb, push, tools, odds
 import csv
 import pandas as pd
 
 from dictdiffer import diff
-from scoreboard import Scoreboard
+from modules.scoreboard import Scoreboard
 
 
-def lineup_slot_map(slot_id):
+def lineup_slot_map(slot_id: str) -> str:
     position_names = {
         '0': 'QB',
         '1': 'QB',
@@ -33,7 +30,7 @@ def lineup_slot_map(slot_id):
     return position_names.get(slot_id)
 
 
-def sleep_countdown(sleep_interval):
+def sleep_countdown(sleep_interval: int) -> None:
     print(f"League process sleep countdown: ", end='')
     while sleep_interval > 0:
         if sleep_interval % 10 == 0:
@@ -44,24 +41,28 @@ def sleep_countdown(sleep_interval):
 
 class Stats:
     # New year procedure: just update DEFAULT_LEAGUE_ID to any valid league id
-    def __init__(self, season=int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))):
-        self._SEASON = season
-        self.DEFAULT_LEAGUE_ID = "90960733"
+    def __init__(self, season: int = int((datetime.datetime.now() - datetime.timedelta(days=30)).strftime('%Y'))):
+        self._SEASON: int = season
+        self.DEFAULT_LEAGUE_ID: str = "1929067716"
         self.request_instance = requestor.Request()
         self.request_instance.year = self._SEASON
-        self.SPORT_ID = "ffl"  # mlb: flb, nfl: ffl
-        self.API_BASE = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/{self.SPORT_ID}/seasons"
-        self.REFRESH = True
+        self.SPORT_ID: str = "ffl"  # mlb: flb, nfl: ffl
+        self.API_BASE: str = f"https://lm-api-reads.fantasy.espn.com/apis/v3/games/{self.SPORT_ID}/seasons"
+        self.REFRESH: bool = True
+        self.END_OF_DAY = 2200
         self.push_instance = push.Push(calling_function="FBInfo")
         self.logname = './logs/statslog.log'
         self.logger = push.get_logger(logfilename=self.logname)
         self.DB = sqldb.DB('Football.db')
         # self.lineup_slot_map = self.lineup_slot_map()
+        self.original_rosters = None
+        self.new_rosters = None
         self.threaded = True
         self.gamedays = [0, 3, 6]
         self._gameday = True if datetime.datetime.now().weekday() in self.gamedays else False
         self.positional_team_rankings_url = (f"{self.API_BASE}/{self.SEASON}/segments/0/"
                                              f"leagues/{self.DEFAULT_LEAGUE_ID}?view=mPositionalRatingsStats")
+        self.odds = odds
 
     def __repr__(self):
         return f"Stats object: Season: {self.SEASON}\n"
@@ -117,7 +118,7 @@ class Stats:
         url = f"{self.API_BASE}/{year}/segments/0/leaguedefaults/3?view=kona_player_info"
         player_data = self.request_instance.make_request(url=url,
                                                          output_file=f"../data/ESPNPlayerStats.json",
-                                                         write=True, calling_function="get_player_stats")
+                                                         write=False, calling_function="get_player_stats")
         try:
             players = player_data['players']
             for player in players:
@@ -233,36 +234,40 @@ class Stats:
         data['league_name'] = league_name
         return data
 
-    def roster_dict(self):
-        _roster_dict = dict()
-        roster_query = (f"select id||'_'||coalesce(injuryStatus,'NA')||'_'||"
-                        f"lineup_slot||'_'||league||'_'||team_abbrev as key, "
-                        f"name, id, injuryStatus, lineup_slot, league, team_abbrev from PlayerRosters "
-                        f"where key is not NULL")
+    def roster_dict(self) -> dict:
+        # _roster_dict = dict()
+        # roster_query = (f"select id||'_'||coalesce(injuryStatus,'NA')||'_'||"
+        #                 f"lineup_slot||'_'||league||'_'||team_abbrev as key, "
+        #                 f"name, id, injuryStatus, lineup_slot, league, team_abbrev from PlayerRosters "
+        #                 f"where key is not NULL")
+        roster_query: str = (f"select id||'_'||league||'_'||team_id as key, "
+                             f"name, id, injuryStatus, lineup_slot, league, team_id, team_abbrev from PlayerRosters "
+                             f"where key is not NULL")
         print(f"roster_dict: roster_query: {roster_query}")
         rows = self.DB.query(roster_query)
-        print(f"roster_dict: roster_query: {rows} rows found")
-        for row in rows:
-            key = str(row['key'])
-            _roster_dict[key] = row
-        return _roster_dict
+        # print(f"roster_dict: roster_query: {rows} rows found")
+        return {str(row['key']): row for row in rows}
+        # for row in rows:
+        #     key = str(row['key'])
+        #     _roster_dict[key] = row
+        # return _roster_dict
 
-    def slack_thread(self):
+    def slack_thread(self) -> None:
         slack_instance = push.Push(calling_function="FBStatsSlack")
         while True:
-            update_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            update_time: str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
             # slack_instance.logger_instance.warning(f"Slack_thread read_slack.")
-            slack_text = slack_instance.read_slack()
+            slack_text: str = slack_instance.read_slack()
             if slack_text != "":
                 slack_instance.logger_instance.info(f"Slack text ({update_time}):{slack_text}.")
                 slack_instance.push(f"Received slack request: {slack_text}")
                 self.process_slack_text(slack_text)
             time.sleep(5)
 
-    def process_slack_text(self, text):
+    def process_slack_text(self, text: str) -> None:
         print(f"process_slack_text: {text}")
         if text.upper()[0:2] == "T:":
-            table = text[2:]
+            table: str = text[2:]
             print(f"{text[2:]}")
             self.push_instance.push(title="Table to web", body=f'Table to web: {table}')
             try:
@@ -273,98 +278,62 @@ class Stats:
                 self.push_instance.push(title="Table to web error", body=f'Table to web error: {ex}')
                 self.logger.error(f"Exception in process_slack_text: {ex}")
 
-    def process_transactions(self, transactions):
-        msg = ""
-        summary = dict()
+    def process_transactions(self, transactions: [dict]):
+        update_time: str = (datetime.datetime.now().strftime("%Y%m%d %#I:%M") +
+                            datetime.datetime.now().strftime('%p'))
+        if len(transactions) > 400:
+            print(f"Transactions count {len(transactions)}"
+                  f" is too large - skipping ")
+            self.push_instance.push(title="Transaction count",
+                                    body=f"Transaction count is too long "
+                                         f"({len(transactions)} entries) - skipping ")
         for transaction in transactions:
-            for detail in transaction['details']:
-                key = f"{detail['name']}_" \
-                      f"{detail['league']}_" \
-                      f"{detail['team_abbrev']}"
-                if not summary.get(key):
-                    summary[key] = dict()
-                summary[key]['name'] = detail['name']
-                summary[key]['league'] = detail['league']
-                summary[key]['team_abbrev'] = detail['team_abbrev']
-                if transaction.get('type') is None:
-                    print(f"Transaction type not found")
-                if transaction['type'] == "add":
-                    summary[key]['new_injury_status'] = detail.get('injuryStatus', "----")
-                    summary[key]['new_lineup_slot'] = detail.get('lineup_slot', "----")
-                if transaction['type'] == "remove":
-                    summary[key]['old_injury_status'] = detail.get('injuryStatus', "----")
-                    summary[key]['old_lineup_slot'] = detail.get('lineup_slot', "----")
+            # msg: str = ""
+            # title: str = ""
+            if transaction.get('type') == 'change':
+                (transaction_key, transaction_attribute) = transaction['key'].split('.')
+                title = transaction_attribute
+                (transaction_from, transaction_to) = transaction['details']
+                roster_spot: {} = self.new_rosters.get(transaction_key)
 
-        for key in summary:
-            name = summary[key]['name']
-            league = summary[key]['league']
-            team_abbrev = summary[key]['team_abbrev']
-            old_injury_status = "-"
-            new_injury_status = "="
-            old_lineup_slot = "-"
-            new_lineup_slot = "-"
-            try:
-                if summary[key].get('old_injury_status', "-"):
-                    old_injury_status = summary[key].get('old_injury_status', "-")[0:1]
-                if summary[key].get('new_injury_status', "-"):
-                    new_injury_status = summary[key].get('new_injury_status', "-")[0:1]
-                if summary[key].get('old_lineup_slot', "-"):
-                    old_lineup_slot = summary[key].get('old_lineup_slot', "-")
-                if summary[key].get('new_lineup_slot', "-"):
-                    new_lineup_slot = summary[key].get('new_lineup_slot', "-")
-            except Exception as ex:
-                # self.push_instance.push(title="Info", body=f'Exception: {ex}')
-                print(f"Exception in process_transactions: {ex}")
-            # if not team_abbrev and not league:
-            #     break
-            update_time = datetime.datetime.now().strftime("%#I:%M") + datetime.datetime.now().strftime('%p')
-            transtype = ""
-            if old_lineup_slot == "-" and new_lineup_slot != "-":
-                transtype = "ADD: "
-            if old_lineup_slot != "-" and new_lineup_slot == "-":
-                transtype = "DROP: "
-            if old_lineup_slot != "-" and new_lineup_slot != "-" and old_injury_status == new_injury_status:
-                transtype = "LINEUP: "
-            if old_injury_status != new_injury_status and old_injury_status != "-" and new_injury_status != "-":
-                transtype = f"STATUS: "
-            transtype += update_time
-            msg += f"{transtype}\n"
+                # don't report players on opposing teams that were on the watch list last week
+                # do report players on opposing teams that are on the watch list this week
+                if transaction_attribute == 'team_abbrev' and transaction_to[-1] != '*':
+                    continue
 
-            self.push_instance.push(title="Roster change", body=f'{transtype}   {name}')
-
-            msg += f"{name:}\n"
-            print(f"{name:}\n")
-            tm_lg = f"tm:{team_abbrev} - lg:{league}"
-            fm_to = ""
-            if old_injury_status != new_injury_status and old_injury_status != "None" and new_injury_status != "None":
-                fm_to = f"From: {old_injury_status} To: {new_injury_status}    Lineup: {new_lineup_slot}"
-            if old_lineup_slot != new_lineup_slot:
-                fm_to = f"From: {old_lineup_slot} To: {new_lineup_slot}"
-            msg += f"{tm_lg}    {fm_to}\n"
-            print(f"{tm_lg}    {fm_to}\n")
-            self.push_instance.push(title="Roster change", body=f'{tm_lg}    {fm_to}')
-
-            msg += f"{'-----------------':<66}\n"
-
-            self.push_instance.push(title="Roster change", body=f'{"-------------------------------"}')
-
-        # if msg != "":
-        #     print(msg)
-        # self.push_instance.push(title="Info", body=f'{msg}')
-
+                msg = (f"{roster_spot.get('name')} {transaction_attribute} CHANGE"
+                       f"\n\tFROM: {transaction_from} TO: {transaction_to}"
+                       f"\n\tTeam: {roster_spot.get('team_abbrev')} League: {roster_spot.get('league')}"
+                       f"\n\tSlot: {roster_spot.get('lineup_slot')} Status: {roster_spot.get('injuryStatus')}"
+                       f"\n\tat {update_time}")
+                self.push_instance.push(title=title, body=f'{msg}\n\n', print_it=True)
+            else:
+                for transaction_details in transaction.get('details'):
+                    transaction_detail = transaction_details[1]
+                    if transaction.get('type') == 'remove':
+                        ttype = "DROP"
+                    else:
+                        ttype = "ADD"
+                    title = "ADD/DROP"
+                    msg = (f"{ttype}: {transaction_detail.get('name')} "
+                           f"\n\tTeam: {transaction_detail.get('team_abbrev')}"
+                           f"\n\tLg: {transaction_detail.get('league')}"
+                           f"\n\tSlot: {transaction_detail.get('lineup_slot')} "
+                           f"Status: {transaction_detail.get('injuryStatus')}"
+                           f"\n\tReported at {update_time}")
+                    # print(msg)
+                    self.push_instance.push(title=f"{title}", body=f'{msg}\n\n', print_it=True)
         return
 
     def write_rosters(self, data):
         update_time = datetime.datetime.now().strftime("%Y%m%d.%H%M%S")
         file_name = '../data/roster_data_file.csv'
         table_name = "Rosters"
-        # original_rosters = roster_dict(data['db'])
         with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
             # creating a csv writer object
             csv_writer = csv.writer(csv_file)
             csv_writer.writerow(['league', 'team_name', 'team_id', 'team_abbrev', 'player_id',
                                  'lineup_slot', 'year', 'update_time'])
-            # league = data['rosters']['id']
             teams = data['rosters'][0]['teams']
             for team in teams:
                 team_name = team['name']
@@ -401,28 +370,28 @@ class Stats:
 
     def diff_rosters(self, new_rosters, original_rosters):
         roster_diffs = list(diff(original_rosters, new_rosters))
-        transactions = list()
-        total_diffs = 0
-        for item in roster_diffs:
-            difftype = item[0]
-            detail_list = list()
-            for subitem in item[2]:
-                details = subitem[1]
-                detail_list.append(details)
-            transactions.append({'type': difftype, 'details': detail_list})
-            total_diffs = len(detail_list)
-        print(f"Number of roster differences: {total_diffs}")
+        transaction_headers = ['type', 'key', 'details']
+        transactions = [{h: i for (h, i) in zip(transaction_headers, item)} for item in roster_diffs]
+        diff_count: int = 0
+        for transaction in transactions:
+            if transaction.get('type') == 'change':
+                diff_count += 1
+            else:
+                diff_count += len(transaction.get('details'))
+        print(f"Number of roster differences: {diff_count}\n")
+        self.push_instance.push(title="Transaction count",
+                                body=f"Transaction count is {diff_count}")
         if new_rosters and original_rosters:
             self.process_transactions(transactions)
         else:
-            # self.push_instance.push(title="Info", body=f'Exception: {ex}')
-            print(f"new_rosters len:{len(new_rosters)} or original_rosters len:{len(original_rosters)} is empty")
+            print(f"new_rosters len:{len(new_rosters)} or "
+                  f"original_rosters len:{len(original_rosters)} is empty")
 
-    def write_player_info(self, data):
-        file_name = '../data/player_data_file.csv'
-        table_name = "PlayerInfo"
+    def write_player_info(self, data) -> int:
+        file_name: str = '../data/player_data_file.csv'
+        table_name: str = "PlayerInfo"
 
-        is_header = True
+        is_header: bool = True
         with open(file_name, 'w', newline='', encoding='utf-8') as csv_file:
             # creating a csv writer object
             csv_writer = csv.writer(csv_file)
@@ -437,13 +406,13 @@ class Stats:
         df = df.assign(year=self.SEASON)
         # print(df)
 
-        delcmd = f"delete from {table_name} where Year = {data['year']}"
+        delcmd: str = f"delete from {table_name} where Year = {data['year']}"
         self.DB.delete(delcmd)
         self.DB.df_to_sql(df, table_name, register=False)
 
         return 0
 
-    def write_player_stats(self, data=None):
+    def write_player_stats(self, data=None) -> int:
         if data is None:
             data = dict()
             data['player_stats'] = self.get_player_stats()
@@ -659,7 +628,7 @@ class Stats:
         scores.start()
 
     def process_league(self, league):
-        # Get data from web
+        # Get data from web or flat files
         league_id = league['leagueID']
         league_name = league['leagueAbbr']
         self.logger.info(f"Get league data for {league_name}:")
@@ -681,36 +650,49 @@ class Stats:
         #####
         self.logger.info(f"League {league_name} processed\n")
 
+    def run_snaps(self):
+        self.table_snapshot(table_name="PlayerDashboard", snap_name="PDSnap")
+        self.table_snapshot(table_name="FutureDash", snap_name="FDSnap")
+        self.table_snapshot(table_name="PlayerFullScheduleStats", snap_name="PFSSnap")
+
     def run_leagues(self, threaded=True, sleep_interval=120):
         self.DB = sqldb.DB('Football.db')
         leagues = self.get_leagues()
         print(f"run_leagues run scores thread is set to {threaded}")
         print(f"run_leagues sleep interval is set to {sleep_interval}")
         while True:
-            old_rosters = self.roster_dict().copy()
+            self.original_rosters = self.roster_dict().copy()
             try:
                 [self.process_league(league) for league in leagues]
             except Exception as ex:
                 self.logger.error(f"ERROR in run_leagues: {ex}")
                 self.push_instance.push(f"ERROR in run_leagues: {ex}")
-            new_rosters = self.roster_dict().copy()
-            self.diff_rosters(new_rosters, old_rosters)
+            self.new_rosters = self.roster_dict().copy()
+            self.diff_rosters(self.new_rosters, self.original_rosters)
+            self.odds.run()
             self.table_snapshot(table_name="PlayerDashboard", snap_name="PDSnap")
+            self.table_snapshot(table_name="FutureDash", snap_name="FDSnap")
+            self.table_snapshot(table_name="PlayerFullScheduleStats", snap_name="PFSSnap")
             current_time = int(datetime.datetime.now().strftime("%H%M"))
             print(f"current time is {current_time}")
-            if current_time > 2200:
+            if current_time > self.END_OF_DAY:
                 print("End of day")
                 exit(0)
             step = 600
             print(f"Sleep for {sleep_interval} seconds: ", end='')
+            count = 0
             for i in range(0, sleep_interval, step):
+                if count % 20 == 0:
+                    print("")
                 print(f"I{sleep_interval - i} ", end='')
+                count += 1
                 time.sleep(step)
 
     def start(self, threaded=True, sleep_interval=60 * 60 * 24):
         self.threaded = threaded
         if self.threaded is True:
-            process_league_thread = threading.Thread(target=self.run_leagues, kwargs={'sleep_interval': sleep_interval})
+            process_league_thread = (
+                threading.Thread(target=self.run_leagues, kwargs={'sleep_interval': sleep_interval}))
             scores_thread = threading.Thread(target=self.scoreboard_thread)
             read_slack_thread = threading.Thread(target=self.slack_thread)
             process_league_thread.start()
@@ -720,9 +702,17 @@ class Stats:
             self.run_leagues(threaded=False, sleep_interval=sleep_interval)
 
 
+@tools.connection_check
+def run(threaded=False, sleep_interval=60 * 60 * 8):
+    Stats().start(threaded=threaded, sleep_interval=sleep_interval)
+
+
+def run_snaps():
+    Stats().run_snaps()
+
+
 def main():
-    stats = Stats()
-    stats.start(threaded=False)
+    Stats().start(threaded=False)
 
 
 if __name__ == "__main__":

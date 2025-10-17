@@ -1,6 +1,9 @@
 import datetime
 import inspect
 import logging
+import os
+
+import requests
 import sqlite3
 import sys
 import time
@@ -48,13 +51,14 @@ def get_logger(logfilename='./logs/pushlog.log',
 
     logger_instance = logging.getLogger(__name__)
     logger_instance.setLevel(logging.DEBUG)
-    logfilename = './logs/pushlog.log'
+    # logfilename = './logs/pushlog.log'
     formatter = logging.Formatter(logformat)
     file_handler = logging.FileHandler(logfilename)
     file_handler.setFormatter(formatter)
     logger_instance.addHandler(file_handler)
 
     return logger_instance
+
 
 def print_calling_function():
     print('\n')
@@ -68,6 +72,11 @@ def print_calling_function():
     # print(str(inspect.stack()[-1].filename) + ", " + str(inspect.stack()[-1].function) +
     #      ", " + str(inspect.stack()[-1].lineno))
     return
+
+
+def now() -> str:
+    return datetime.now().strftime('%Y%m%d %I:%M:%S %p').replace(' 0', ' ')
+
 
 def get_platform():
     platforms = {
@@ -153,31 +162,85 @@ def try_wrap(func):
     return tryfunction
 
 
+def try_syntax(n: int) -> str:
+    # alternative one-liner: (lambda tt: f'{tt} try' if tt == 1 else f'{tt} tries')
+    if n > 1:
+        return f"{n} tries"
+    else:
+        return f"{n} try"
+
+
+def connection_check(func):
+    logger_instance = get_logger()
+    tries = 0
+    max_tries = 5
+    loop_sleep = 6
+    while tries < max_tries:
+        try:
+            requests.get("https://www.google.com", timeout=8)
+            break
+        except Exception as ex:
+            logger_instance.warning(f"Exception in tools.connection_wrap: {str(ex)}\nSleeping for {loop_sleep} seconds")
+            print(f"\n***\nConnect your device to the internet\n"
+                  f"Attempting connection and checking again in {loop_sleep} seconds\n"
+                  f"{try_syntax(max_tries - tries)} remaining\n***\n")
+            connect_cmd = f'''cmd /c "netsh wlan connect name=CC1"'''
+            os.system(connect_cmd)
+            if tries == 0:
+                time.sleep(2)
+            else:
+                time.sleep(loop_sleep)
+            tries += 1
+    if tries == max_tries:
+        logger_instance.critical(f"Check connection failed {max_tries} times. EXIT.")
+        exit(-1)
+    else:
+        print(f"\n***\nCheck connection passed\n***\n")
+
+    return func
+
+
+def dicts_from_lists(items: list, headers: list):
+    rc = 1
+    for row in items:
+        if len(headers) != len(row):
+            print(f"Header length {len(headers)}: {headers} does not "
+                  f"equal items length {len(row)} for row {rc}: {row}")
+            return False
+        else:
+            rc += 1
+    return [{h: i for (h, i) in zip(headers, item)} for item in items]
+
+
 def time_diff(start_time, end_time):
     t1 = datetime.strptime(str(start_time), "%H%M%S")
-    #print('Start time:', t1.time())
+    # print('Start time:', t1.time())
 
     t2 = datetime.strptime(str(end_time), "%H%M%S")
-    #print('End time:', t2.time())
+    # print('End time:', t2.time())
 
     # get difference
     delta = t2 - t1
     return delta
 
+
 def unixtime_from_mlb_format(mlbtimestr):
     return datetime.strptime(mlbtimestr, "%Y-%m-%dT%H:%M:%SZ").timestamp()
+
 
 def unix_gmt():
     nowtime = int(datetime.now().timestamp())
     tzoffset = 3600 * (int(datetime.now(pytz.timezone('America/Tijuana')).strftime("%z")) / -100)
-    #print(f'now: {nowtime} txoffset: {tzoffset}')
+    # print(f'now: {nowtime} txoffset: {tzoffset}')
     return nowtime + tzoffset
+
 
 def local_time_from_mlb_format(mlbtimestr):
     gmt_game_time = datetime.strptime(mlbtimestr, "%Y-%m-%dT%H:%M:%SZ")
     tzoffset = (int(datetime.now(pytz.timezone('America/Tijuana')).strftime("%z")) / -100)
     game_time = gmt_game_time - timedelta(hours=tzoffset)
     return game_time
+
 
 def local_hhmmss_from_mlb_format(mlbtimestr):
     gmt_game_time = datetime.strptime(mlbtimestr, "%Y-%m-%dT%H:%M:%SZ")

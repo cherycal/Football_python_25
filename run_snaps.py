@@ -4,7 +4,7 @@ from modules import player_stats
 
 
 def main():
-	player_stats.run()
+	player_stats.run_snaps()
 
 
 if __name__ == "__main__":
