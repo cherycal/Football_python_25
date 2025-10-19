@@ -1,6 +1,3 @@
-__author__ = 'chance'
-
-import datetime
 import sys
 import os
 import threading
@@ -12,10 +9,91 @@ from modules import requestor, sqldb, push, tools
 import pandas as pd
 import dataframe_image as dfi
 from git import Repo
+from typing import Any, Dict, List, Union
 
+from quickchart import QuickChart
 
 def html_template(msg):
     return f"<!DOCTYPE html><html><head><title>FRANTASYLAND</title></head><body><h2>{msg}</h2><p></p></body></html>"
+
+def time_snap(time_type:str = None):
+    if time_type:
+        if time_type == "hhmmss":
+            return datetime.datetime.now().strftime('%H%M%S')
+        if time_types.startswith('%'):
+            return datetime.datetime.now().strftime(time_type)
+    return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+
+class Matchup:
+    def __init__(self, data: Dict[str, Any]):
+        self.league: str = str(data.get('league', f"Chart_{time_snap()}"))
+        self.my_team: str = str(data.get('my_team', f"my_team"))
+        self.opp_team: str = str(data.get('opp_team', f"opp_team"))
+        self.my_team_data: List[Any] = [data['my_team_data']] if 'my_team_data' in data else []
+        self.opp_team_data: List[Any] = [data['opp_team_data']] if 'opp_team_data' in data else []
+        self.x_axis_data: List[Any] = [data['x_axis_data']] if 'x_axis_data' in data else []
+        self.created_time: str = time_snap("hhmmss")
+        self.filename = f"./site/{self.league}.png"
+
+    def __repr__(self):
+        return (f"Matchup {self.name}\n"
+                f"Chart Filename: {self.filename}\n"
+                f"My Team: {self.my_team}\n"
+                f"My Team Data: {self.my_team_data}\n"
+                f"Opp Team: {self.opp_team}\n"
+                f"Opp Team Data: {self.opp_team_data}\n"
+                f"X Axis: {self.x_axis_data}\n"
+                f"Created: {self.created_time}\n")
+
+    def append(self, update: Dict[str, Union[Any, List[Any]]]):
+        for key in ['my_team_data', 'opp_team_data', 'x_axis_data']:
+            if key in update:
+                values = update[key]
+                if not isinstance(values, list):
+                    values = [values]
+                getattr(self, key).extend(values)
+
+    def create_chart(self):
+
+        max_value = max(*self.my_team_data,*self.opp_team_data) + 10
+        min_value = min(*self.my_team_data,*self.opp_team_data) - 10
+
+        qc = QuickChart()
+        qc.width = 1200
+        qc.height = 800
+        qc.version = '2'
+
+        qc.config = """{
+              type: 'line',
+              data: {
+                labels: """ + str(self.x_axis_data) + """,
+                datasets: [{
+                  label: '""" + self.my_team+ """',
+                  fill: false,
+                  data: """ + str(self.my_team_data) + """
+                }, {
+                  label: '""" + self.opp_team + """',
+                  fill: false,
+                  data: """ + str(self.opp_team_data) + """
+                }]
+              },
+              options: {
+                title: {
+                  display: true,
+                  text: '""" + str(self.league) + """',
+                },scales: {
+                    yAxes: [{
+                        ticks: {
+                            max: """ + str(max_value) + """,
+                            min: """ + str(min_value) + """
+                        }
+                    }]
+                }
+              },
+            }"""
+
+        qc.to_file(self.filename)
+        print(f"Created chart {self.filename} at {time_snap("hhmmss")}")
 
 
 class Scoreboard:
@@ -45,6 +123,7 @@ class Scoreboard:
         self.page_msg = ""
         self.repo_dir = os.getcwd()
         self.git_repo = Repo(self.repo_dir)
+        self.matchups: Dict[str, ObjectClass] = {}
 
     @property
     def run_it(self):
@@ -79,6 +158,20 @@ class Scoreboard:
     @main_loop_sleep.setter
     def main_loop_sleep(self, value: int):
         self._main_loop_sleep = value
+
+    def add_matchup(self, league: str, my_team: str, opp_team: str):
+        initial_data = {'league': league, 'my_team': my_team, 'opp_team': opp_team}
+        self.matchups[league] = Matchup(initial_data)
+
+    def update_matchup(self, league: str, update_data: Dict[str, Union[Any, List[Any]]]):
+        self.matchups.get(league).append(update_data)
+        # update_data = {'my_team_data': my_team_projected_score,
+        #                'opp_team_data': opp_team_projected_score,
+        #                'x_axis_data': time_snap("hhmmss")}
+
+    def create_matchup_chart(self, league: str):
+        self.matchups.get(league).create_chart()
+        self.git_push(self.matchups.get(league).filename)
 
     def run_query(self, query, msg="query", channel=None):
         if not channel:
@@ -188,7 +281,7 @@ class Scoreboard:
         return data
 
     def process_scoreboard(self, data):
-        update_time = f"{datetime.datetime.now().strftime('%I:%M%p')}"
+        update_time = f"{datetime.datetime.now().strftime('%I%M %p')}"
         self.logger.info(f"process_scoreboard at {update_time}")
         # summary = dict()
         # summary['update_time'] = update_time
@@ -206,12 +299,15 @@ class Scoreboard:
                 away_team_name = self.fantasy_teams[league][str(away_team)]
                 my_loc = ""
                 my_team = ""
+                opp_team = ""
                 if home_team_name in ['FFT', 'T  T']:
                     my_team = home_team_name
+                    opp_team = away_team_name
                     home_team_name += "**"
                     my_loc = "home"
                 if away_team_name in ['FFT', 'T  T']:
                     my_team = away_team_name
+                    opp_team = home_team_name
                     away_team_name += "**"
                     my_loc = "away"
                 if home_team == data['my_team_id'] or away_team == data['my_team_id']:
@@ -219,39 +315,60 @@ class Scoreboard:
                     away_score = matchup['away']['totalPointsLive']
                     home_projected_score = round(matchup['home']['totalProjectedPointsLive'], 3)
                     away_projected_score = round(matchup['away']['totalProjectedPointsLive'], 3)
-                    update_time = datetime.datetime.now().strftime("%#I:%M")
+                    update_time = datetime.datetime.now().strftime("%#I%M")
                     AMPM_flag = datetime.datetime.now().strftime('%p')
                     home_lead = ""
                     away_lead = ""
+                    #my_team_projected_score = 0.0
+                    #opp_team_projected_score = 0.0
                     if home_projected_score > away_projected_score:
                         if my_loc == "home":
+                            my_team_projected_score = home_projected_score
+                            opp_team_projected_score = away_projected_score
                             home_lead = f"Winning by {round(home_projected_score - away_projected_score, 1)}"
                         else:
+                            my_team_projected_score = away_projected_score
+                            opp_team_projected_score = home_projected_score
                             away_lead = f"Losing by {round(home_projected_score - away_projected_score, 1)}"
                     else:
                         if my_loc == "away":
+                            my_team_projected_score = away_projected_score
+                            opp_team_projected_score = home_projected_score
                             away_lead = f"Winning by {round(away_projected_score - home_projected_score, 1)}"
                         else:
+                            my_team_projected_score = home_projected_score
+                            opp_team_projected_score = away_projected_score
                             home_lead = f"Losing by {round(away_projected_score - home_projected_score, 1)}"
-                    msg = f"{update_time}{AMPM_flag}\tLeague: {league}\t\t\t\t\t\t\t\t\t\t\r\n\n" \
-                          f"{home_team_name:<6} {home_score:>6.2f} - ( proj: {home_projected_score:>7.3f} ) {home_lead}" \
+
+                    update_data = {'my_team_data': my_team_projected_score,
+                                   'opp_team_data': opp_team_projected_score,
+                                   'x_axis_data': time_snap("hhmmss")}
+
+                    if league not in self.matchups:
+                        self.add_matchup( league, my_team, opp_team)
+
+                    self.update_matchup(league, update_data)
+                    self.create_matchup_chart(league)
+
+                    msg = f"Time: {update_time}{AMPM_flag}\nLeague: {league}\t\t\t\t\t\t\t\t\t\t\r\n\n" \
+                          f"{league} {home_team_name:<6} {home_score:>6.2f} - ( proj: {home_projected_score:>7.3f} ) {home_lead}" \
                           f"\t\t\t\t\t\r\n\n" \
-                          f"{away_team_name:<6} {away_score:>6.2f} = ( proj: {away_projected_score:>7.3f} ) {away_lead}"
+                          f"{league} {away_team_name:<6} {away_score:>6.2f} = ( proj: {away_projected_score:>7.3f} ) {away_lead}"
                     print(msg)
                     # summary[league] = f"{my_team} {home_lead} {away_lead}"
-                    summary_msg += f"{my_team} {home_lead} {away_lead}, "
+                    summary_msg += f"{league} {my_team} {home_lead} {away_lead}, "
                     if msg != "":
                         self.push_instance.push(title="Score update",
-                                                body=f"{update_time}{AMPM_flag}:",
+                                                body=f"{league} {update_time}{AMPM_flag}:",
                                                 channel="scoreboard")
                         time.sleep(.5)
                         self.push_instance.push(title="Score update",
-                                                body=f"{home_team_name:<6} {home_score:>6.2f} "
+                                                body=f"{league} {home_team_name:<6} {home_score:>6.2f} "
                                                      f"- ( proj: {home_projected_score:>7.3f} ) {home_lead}",
                                                 channel="scoreboard")
                         time.sleep(.5)
                         self.push_instance.push(title="Score update",
-                                                body=f"{away_team_name:<6} {away_score:>6.2f} "
+                                                body=f"{league} {away_team_name:<6} {away_score:>6.2f} "
                                                      f"- ( proj: {away_projected_score:>7.3f} ) {away_lead}",
                                                 channel="scoreboard")
         self.summary_msg += f"{summary_msg}\n"
@@ -304,6 +421,15 @@ class Scoreboard:
         self.page_msg += f"{update_time}: {self.summary_msg[:-3]}<br>"
         print(self.page_msg)
         self.git_push('./site/index.html', html_template(self.page_msg))
+        # graphs_html = """
+        #             <img src="WANT.png" alt="OIP.png">
+        #             <img src="RULE.png" alt="OIP.png">
+        #             <img src="CHIK.png" alt="OIP.png">
+        #             <img src="HYPE.png" alt="OIP.png">
+        #             <img src="PPL.png" alt="OIP.png">
+        #             <img src="AXIS.png" alt="OIP.png">
+        #             """
+        # self.git_push('./site/graphs.html', html_template(graphs_html))
         current_time = int(datetime.datetime.now().strftime("%H%M"))
         if current_time == 1015 or current_time == 1255:
             self.run_query("select * from CurrentMatchupRosters")
@@ -312,17 +438,18 @@ class Scoreboard:
             print("End of day")
             exit(0)
 
-    def git_push(self, filename, text):
-        with open(f'{filename}', 'w') as f:
-            f.write(f"{text}")
-            f.close()
-            assert not self.git_repo.bare
-            git = self.git_repo.git
-            git.pull()
-            git.add(filename)
-            git.commit('-m', 'update', filename)
-            git.push()
-            self.logger.info(f"pushed {filename} to git")
+    def git_push(self, filename, text:str = None):
+        if text:
+            with open(f'{filename}', 'w') as f:
+                f.write(f"{text}")
+                f.close()
+        assert not self.git_repo.bare
+        git = self.git_repo.git
+        git.pull()
+        git.add(filename)
+        git.commit('-m', 'update', filename)
+        git.push()
+        self.logger.info(f"pushed {filename} to git")
 
     def start(self):
         read_slack_thread = threading.Thread(target=self.slack_thread)
