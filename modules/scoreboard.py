@@ -3,7 +3,7 @@ import os
 import threading
 
 sys.path.append('./modules')
-import time
+import time, datetime
 from modules import requestor, sqldb, push, tools
 
 import pandas as pd
