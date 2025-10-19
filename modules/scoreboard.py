@@ -81,6 +81,7 @@ class Matchup:
                 title: {
                   display: true,
                   text: '""" + str(self.league) + """',
+                  fontSize: 26
                 },scales: {
                     yAxes: [{
                         ticks: {
