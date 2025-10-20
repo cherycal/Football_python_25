@@ -50,7 +50,8 @@ class Matchup:
 
     def __repr__(self):
         return (f"Matchup:\n"
-                f"\tLeague: {self.name}\n"
+                f"\tMatchup name: {self.name}\n"
+                f"\tLeague: {self.league}\n"
                 f"\tWeek: {self.week}\n"
                 f"\tChart Filename: {self.filename}\n"
                 f"\tMy Team: {self.my_team}\n"
