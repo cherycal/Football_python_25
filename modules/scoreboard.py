@@ -44,7 +44,7 @@ class Matchup:
         self.my_team_data: List[Any] = [data['my_team_data']] if 'my_team_data' in data else []
         self.opp_team_data: List[Any] = [data['opp_team_data']] if 'opp_team_data' in data else []
         self.x_axis_data: List[Any] = [data['x_axis_data']] if 'x_axis_data' in data else []
-        self.created_time: str = time_snap("hhmmss")
+        self.created_time: str = time_snap()
         self.name = f"{self.league}_{self.week}"
         self.filename = f"./site/{self.league}.png"
 
@@ -110,7 +110,7 @@ class Matchup:
             }"""
 
         qc.to_file(self.filename)
-        print(f"Created chart {self.filename} at {time_snap("hhmmss")}")
+        print(f"Created chart {self.filename} at {time_snap()}")
 
 
 class Scoreboard:
