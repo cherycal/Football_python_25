@@ -25,12 +25,12 @@ def time_snap(time_type:str = None):
             return datetime.datetime.now().strftime(time_type)
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-def save_matchup(matchup):
+def save_matchup(matchup: object):
     filename = f"{matchup.league}_{matchup.week}.pkl"
     with open(filename, 'wb') as f:
         pickle.dump(matchup, f)
 
-def load_matchup(filename):
+def load_matchup(filename: str):
     with open(filename, 'rb') as f:
         return pickle.load(f)
 
@@ -49,14 +49,16 @@ class Matchup:
         self.filename = f"./site/{self.league}.png"
 
     def __repr__(self):
-        return (f"Matchup {self.name}\n"
-                f"Chart Filename: {self.filename}\n"
-                f"My Team: {self.my_team}\n"
-                f"My Team Data: {self.my_team_data}\n"
-                f"Opp Team: {self.opp_team}\n"
-                f"Opp Team Data: {self.opp_team_data}\n"
-                f"X Axis: {self.x_axis_data}\n"
-                f"Created: {self.created_time}\n")
+        return (f"Matchup:\n"
+                f"\tLeague: {self.name}\n"
+                f"\tWeek: {self.week}\n"
+                f"\tChart Filename: {self.filename}\n"
+                f"\tMy Team: {self.my_team}\n"
+                f"\tMy Team Data: {self.my_team_data}\n"
+                f"\tOpp Team: {self.opp_team}\n"
+                f"\tOpp Team Data: {self.opp_team_data}\n"
+                f"\tX Axis: {self.x_axis_data}\n"
+                f"\tCreated: {self.created_time}\n")
 
     def append(self, update: Dict[str, Union[Any, List[Any]]]):
         for key in ['my_team_data', 'opp_team_data', 'x_axis_data']:
@@ -176,9 +178,10 @@ class Scoreboard:
     def add_matchup(self, league: str, my_team: str, opp_team: str):
         matchup_filename = f"{league}_{self.week}.pkl"
         if os.path.exists(matchup_filename):
-            matchup_loaded = load_matchup(matchup_filename)
-            self.matchups[league] = matchup_loaded
-            print(f"matchup_loaded: {matchup_loaded}")
+            loaded_matchup = load_matchup(matchup_filename)
+            self.matchups[league] = loaded_matchup
+            print(f"matchup_loaded:\n"
+                  f"{loaded_matchup}")
         else:
             initial_data = {'league': league, 'my_team': my_team, 'opp_team': opp_team, 'week': self.week}
             self.matchups[league] = Matchup(initial_data)
@@ -316,8 +319,6 @@ class Scoreboard:
             # print(f"data_week: {data['week']} - matchup_week: {matchup_week}")
             if data['week'] == matchup_week:
                 league = data['league_name']
-                # matchup_name = f"{league}_{matchup_week}"
-                # matchup_filename = matchup_name + ".pkl"
                 home_team = matchup['home']['teamId']
                 away_team = matchup['away']['teamId']
                 home_team_name = self.fantasy_teams[league][str(home_team)]
