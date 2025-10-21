@@ -2,6 +2,7 @@ __author__ = 'chance'
 
 import datetime
 import threading
+from typing import List
 
 import time
 from modules import requestor, sqldb, push, tools, odds
@@ -264,6 +265,11 @@ class Stats:
                 self.process_slack_text(slack_text)
             time.sleep(5)
 
+    def tables_to_html(self, tables: List[str]):
+        for table in tables:
+            self.DB.table_to_html(table)
+            print(f"Saved table {table} to html")
+
     def process_slack_text(self, text: str) -> None:
         print(f"process_slack_text: {text}")
         if text.upper()[0:2] == "T:":
@@ -278,7 +284,7 @@ class Stats:
                 self.push_instance.push(title="Table to web error", body=f'Table to web error: {ex}')
                 self.logger.error(f"Exception in process_slack_text: {ex}")
 
-    def process_transactions(self, transactions: [dict]):
+    def process_transactions(self, transactions):
         update_time: str = (datetime.datetime.now().strftime("%Y%m%d %#I:%M") +
                             datetime.datetime.now().strftime('%p'))
         if len(transactions) > 400:
@@ -294,7 +300,7 @@ class Stats:
                 (transaction_key, transaction_attribute) = transaction['key'].split('.')
                 title = transaction_attribute
                 (transaction_from, transaction_to) = transaction['details']
-                roster_spot: {} = self.new_rosters.get(transaction_key)
+                roster_spot = self.new_rosters.get(transaction_key)
 
                 # don't report players on opposing teams that were on the watch list last week
                 # do report players on opposing teams that are on the watch list this week
@@ -690,7 +696,7 @@ class Stats:
 
     def start(self, threaded=True, sleep_interval=60 * 60 * 24):
         self.threaded = threaded
-        if self.threaded is True:
+        if self.threaded:
             process_league_thread = (
                 threading.Thread(target=self.run_leagues, kwargs={'sleep_interval': sleep_interval}))
             scores_thread = threading.Thread(target=self.scoreboard_thread)
