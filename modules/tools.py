@@ -158,6 +158,7 @@ def try_wrap(func):
             print("-" * 60)
             traceback.print_exc(file=sys.stdout)
             print("-" * 60)
+        return None
 
     return tryfunction
 
@@ -173,8 +174,8 @@ def try_syntax(n: int) -> str:
 def connection_check(func):
     logger_instance = get_logger()
     tries = 0
-    max_tries = 5
-    loop_sleep = 6
+    max_tries = 6
+    loop_sleep = 8
     while tries < max_tries:
         try:
             requests.get("https://www.google.com", timeout=8)
