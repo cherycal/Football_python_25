@@ -679,6 +679,7 @@ class Stats:
             self.table_snapshot(table_name="PlayerDashboard", snap_name="PDSnap")
             self.table_snapshot(table_name="FutureDash", snap_name="FDSnap")
             self.table_snapshot(table_name="PlayerFullScheduleStats", snap_name="PFSSnap")
+            self.tables_to_html(['CWOTV','PlayerByWeek'])
             current_time = int(datetime.datetime.now().strftime("%H%M"))
             print(f"current time is {current_time}")
             if current_time > self.END_OF_DAY:
