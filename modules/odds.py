@@ -11,6 +11,7 @@ sys.path.append('..')
 from modules import sqldb, requestor, tools
 import pandas as pd
 
+# DK Odds:  https://sportsbook-nash.draftkings.com/sites/US-SB/api/sportscontent/controldata/league/leagueSubcategory/v1/markets?isBatchable=false&templateVars=88808%2C4518&eventsQuery=%24filter%3DleagueId%20eq%20%2788808%27%20AND%20clientMetadata%2FSubcategories%2Fany%28s%3A%20s%2FId%20eq%20%274518%27%29&marketsQuery=%24filter%3DclientMetadata%2FsubCategoryId%20eq%20%274518%27%20AND%20tags%2Fall%28t%3A%20t%20ne%20%27SportcastBetBuilder%27%29&include=Events&entity=events
 
 class Odds:
     # New year procedure: just update DEFAULT_LEAGUE_ID to any valid league id
@@ -53,7 +54,12 @@ class Odds:
                         fav = "None"
                         spd = 0
                     else:
-                        fav, spd = line.split(" ")
+                        fav = "N A"
+                        spd = 0
+                        try:
+                            fav, spd = line.split(" ")
+                        except Exception as ex:
+                            print(f"Exception in odds {ex}")
                         if len(fav) == 2:
                             fav = f"{fav[0]} {fav[1]}"
                         line = f"{fav} {spd}"
