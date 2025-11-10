@@ -21,12 +21,12 @@ def time_snap(time_type:str = None):
     if time_type:
         if time_type == "hhmmss":
             return datetime.datetime.now().strftime('%H%M%S')
-        if time_types.startswith('%'):
+        if time_type.startswith('%'):
             return datetime.datetime.now().strftime(time_type)
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 def save_matchup(matchup: object):
-    filename = f"{matchup.league}_{matchup.week}.pkl"
+    filename = f"./pkls/{matchup.league}_{matchup.week}.pkl"
     with open(filename, 'wb') as f:
         pickle.dump(matchup, f)
 
@@ -45,6 +45,7 @@ class Matchup:
         self.opp_team_data: List[Any] = [data['opp_team_data']] if 'opp_team_data' in data else []
         self.x_axis_data: List[Any] = [data['x_axis_data']] if 'x_axis_data' in data else []
         self.created_time: str = time_snap()
+        self.created_time_formatted = time_snap(time_type='%Y%m%d %H:%M')
         self.name = f"{self.league}_{self.week}"
         self.filename = f"./site/{self.league}.png"
 
@@ -96,7 +97,7 @@ class Matchup:
               options: {
                 title: {
                   display: true,
-                  text: '""" + str(self.league) + """',
+                  text: '""" + str(self.league) + ' @ ' + str(time_snap(time_type='%Y%m%d %H:%M')) + """',
                   fontSize: 44
                 },scales: {
                     yAxes: [{
@@ -177,7 +178,7 @@ class Scoreboard:
         self._main_loop_sleep = value
 
     def add_matchup(self, league: str, my_team: str, opp_team: str):
-        matchup_filename = f"{league}_{self.week}.pkl"
+        matchup_filename = f"./pkls/{league}_{self.week}.pkl"
         if os.path.exists(matchup_filename):
             loaded_matchup = load_matchup(matchup_filename)
             self.matchups[league] = loaded_matchup
