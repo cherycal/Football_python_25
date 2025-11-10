@@ -5,7 +5,7 @@ from modules import player_stats
 
 def main():
 
-    player_stats.Stats().tables_to_html(['CWOTV','PlayerByWeek'])
+    player_stats.Stats().tables_to_html(['CWOTV','PlayerByWeek','PDLite'])
 
     player_stats.run_snaps()
 
